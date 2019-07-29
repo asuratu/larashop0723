@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\OrderRequest;
+use Illuminate\Http\Request;
 use App\Models\ProductSku;
 use App\Models\UserAddress;
 use App\Models\Order;
@@ -66,6 +67,18 @@ class OrdersController extends Controller
 
         $this->dispatch(new CloseOrder($order, config('app.order_ttl')));
         return $order;
+    }
+
+    public function index(Request $request)
+    {
+        $orders = Order::query()
+            // 使用 with 方法预加载，避免N + 1问题
+            ->with(['items.product', 'items.productSku'])
+            ->where('user_id', $request->user()->id)
+            ->orderBy('created_at', 'desc')
+            ->paginate();
+
+        return view('orders.index', ['orders' => $orders]);
     }
 
 
